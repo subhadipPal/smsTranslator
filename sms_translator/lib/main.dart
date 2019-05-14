@@ -29,39 +29,31 @@ class SmsList extends StatefulWidget{
 }
 
 class SmsListState extends State<SmsList> {
-  List<SmsMessage> messages = <SmsMessage>[];
-  final _biggerFont = const TextStyle(fontSize: 18.0);
 
-  @override
-  void initState() {
-    super.initState();
-    _getSmsMessages(new SmsQuery());
+  void onButtonPressed() {
+    print("Pressed");
+    getSms();
   }
-  _getSmsMessages(query) async{
-    messages =  await query.getAllSms;
+
+  Future<void> getSms() async{
+    SmsQuery query = new SmsQuery();
+    List messages = await query.getAllSms;
     print(messages);
   }
-
   @override
   Widget build(BuildContext context) {
-    return Scaffold (
-      appBar: AppBar(
-        title: Text('List'),
+    return new Scaffold(
+      appBar: new AppBar(
+        title: Text('SMS List'),
       ),
-      body: _getListView(),
-    );
-  }
-  Widget _getListView() {
-    return new ListView.builder(
-      padding: const EdgeInsets.all(10.0),
-      itemBuilder: (context, i) {
-        return _buildRow(messages[i]);
-      },
-    );
-  }
-  Widget _buildRow(SmsMessage message) {
-    return new ListTile(
-      title: new Text(message.body, style: _biggerFont),
+      body: new Column(
+        children: <Widget>[
+          RaisedButton(
+            onPressed: onButtonPressed,
+            child:Text('Test')
+          )
+        ],
+      )
     );
   }
 
