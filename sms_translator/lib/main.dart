@@ -48,7 +48,7 @@ class SmsListState extends State<SmsList> {
     ListView tempListViewBuilder = new ListView.builder(
       padding: const EdgeInsets.all(10.0),
       itemCount: messages.length,
-      itemBuilder: (context, i) => ListTile(title: Text(messages[i].body)),
+      itemBuilder: (context, i) => ListTile(title: Text(messages[i].address), subtitle: Text(messages[i].body)),
     );
     setState(() {
       listViewBuilder = tempListViewBuilder;
@@ -63,15 +63,24 @@ class SmsListState extends State<SmsList> {
   Widget build(BuildContext context) {
     return new Scaffold(
         appBar: new AppBar(
-          title: Text('SMS List'),
+          actions: <Widget>[
+            FloatingActionButton(
+              child: Icon(Icons.textsms),
+              heroTag: 'unq1',
+              onPressed: getSms,
+              backgroundColor: Colors.red,
+              foregroundColor: Colors.black,
+            ),
+            FloatingActionButton(
+              child: Icon(Icons.language),
+              heroTag: 'unq2',
+              onPressed: onTranslateText,
+              backgroundColor: Colors.red,
+              foregroundColor: Colors.black,
+            )
+          ],
         ),
-        body: listViewBuilder,
-        floatingActionButton: FloatingActionButton(
-          child: Icon(Icons.refresh),
-          onPressed: getSms,
-          backgroundColor: Colors.red,
-          foregroundColor: Colors.black,
-        )
+        body: listViewBuilder
     );
   }
 }
