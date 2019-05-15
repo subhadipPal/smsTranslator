@@ -3,7 +3,7 @@ import 'package:sms/sms.dart';
 
 void main() => runApp(MyApp());
 final ThemeData androidTheme =
-    new ThemeData(primarySwatch: Colors.pink, accentColor: Colors.white);
+    new ThemeData(primarySwatch: Colors.indigo, accentColor: Colors.white);
 
 class MyApp extends StatelessWidget {
   @override
@@ -12,7 +12,7 @@ class MyApp extends StatelessWidget {
         title: 'SMS viewer',
         theme: androidTheme,
         home: new Scaffold(
-          appBar: new AppBar(title: Text("SMS")),
+          appBar: new AppBar(title: Text("SMS Translator")),
           body: SmsList(),
         ));
   }
@@ -27,8 +27,10 @@ class SmsListState extends State<SmsList> {
   SmsQuery query;
   List<String> smsList = new List(10);
   ListView listViewBuilder = new ListView();
-  void onButtonPressed() {
-    print("Pressed");
+
+  @override
+  void initState() {
+    super.initState();
     getSms();
   }
 
@@ -36,7 +38,6 @@ class SmsListState extends State<SmsList> {
     try {
       query = new SmsQuery();
       List messages = await query.getAllSms;
-      print(messages);
       createListView(messages);
     } catch (e) {
       print('failed: ${e.toString()}');
@@ -44,11 +45,11 @@ class SmsListState extends State<SmsList> {
   }
 
   createListView(messages) {
-    //List<String> smsBodyList = messages.forEach((msg) => msg.body);
     ListView tempListViewBuilder = new ListView.builder(
       padding: const EdgeInsets.all(10.0),
       itemCount: messages.length,
-      itemBuilder: (context, i) => ListTile(title: Text(messages[i].address), subtitle: Text(messages[i].body)),
+      itemBuilder: (context, i) => ListTile(
+          title: Text(messages[i].address), subtitle: Text(messages[i].body)),
     );
     setState(() {
       listViewBuilder = tempListViewBuilder;
@@ -62,25 +63,23 @@ class SmsListState extends State<SmsList> {
   @override
   Widget build(BuildContext context) {
     return new Scaffold(
-        appBar: new AppBar(
-          actions: <Widget>[
-            FloatingActionButton(
-              child: Icon(Icons.textsms),
-              heroTag: 'unq1',
-              onPressed: getSms,
-              backgroundColor: Colors.red,
-              foregroundColor: Colors.black,
-            ),
-            FloatingActionButton(
-              child: Icon(Icons.language),
-              heroTag: 'unq2',
-              onPressed: onTranslateText,
-              backgroundColor: Colors.red,
-              foregroundColor: Colors.black,
-            )
-          ],
-        ),
-        body: listViewBuilder
-    );
+        body: listViewBuilder,
+        floatingActionButton: new Column(
+            crossAxisAlignment: CrossAxisAlignment.end,
+            mainAxisAlignment: MainAxisAlignment.end,
+            children: <Widget>[
+              new Container(
+                margin: const EdgeInsets.only(top: 20.0),
+                child: FloatingActionButton.extended(
+                    icon: Icon(Icons.language, size: 30.0),
+                    heroTag: 'unq2',
+                    onPressed: onTranslateText,
+                    backgroundColor: Colors.indigo,
+                    foregroundColor: Colors.white,
+                    label: Text("Translate")),
+                width: 200.0,
+                height: 60.0,
+              )
+            ]));
   }
 }
