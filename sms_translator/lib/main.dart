@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:sms/sms.dart';
+import 'package:translator/translator.dart';
 
 void main() => runApp(MyApp());
 final ThemeData androidTheme =
@@ -25,8 +26,10 @@ class SmsList extends StatefulWidget {
 
 class SmsListState extends State<SmsList> {
   SmsQuery query;
-  List<String> smsList = new List(10);
+  List<SmsMessage> smsList = new List<SmsMessage>();
+  List<SmsMessage> translatedSmsList = new List<SmsMessage>();
   ListView listViewBuilder = new ListView();
+  Map<String, String> smsBodyAddressMap = new Map<String, String>();
 
   @override
   void initState() {
@@ -54,10 +57,27 @@ class SmsListState extends State<SmsList> {
     setState(() {
       listViewBuilder = tempListViewBuilder;
     });
+    setState(() {
+      smsList = messages;
+    });
   }
 
-  void onTranslateText() {
-    print("translate before");
+  void onTranslateText()  {
+    GoogleTranslator _translator = new GoogleTranslator();
+    List<Future> translatePromises = new List<Future>();
+    this.smsList.forEach((smsMessage) {
+      translatePromises.add(_translator.translate(smsMessage.body));
+    });
+    Future.wait(translatePromises).then((translatedTexts){
+      List<SmsMessage> translatedMessages = new List<SmsMessage>();
+      int i=0;
+      translatedTexts.forEach((text) {
+        translatedMessages.add(new SmsMessage(this.smsList[i].address, text));
+        i++;
+      });
+      createListView(translatedMessages);
+    });
+
   }
 
   @override
@@ -72,12 +92,11 @@ class SmsListState extends State<SmsList> {
                 margin: const EdgeInsets.only(top: 20.0),
                 child: FloatingActionButton.extended(
                     icon: Icon(Icons.language, size: 30.0),
-                    heroTag: 'unq2',
                     onPressed: onTranslateText,
                     backgroundColor: Colors.indigo,
                     foregroundColor: Colors.white,
                     label: Text("Translate")),
-                width: 200.0,
+                width: 160.0,
                 height: 60.0,
               )
             ]));
