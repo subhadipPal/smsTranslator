@@ -29,6 +29,7 @@ class SmsListState extends State<SmsList> {
   List<SmsMessage> smsList = new List<SmsMessage>();
   List<SmsMessage> translatedSmsList = new List<SmsMessage>();
   ListView listViewBuilder = new ListView();
+  Map<String, String> smsBodyAddressMap = new Map<String, String>();
 
   @override
   void initState() {
@@ -61,31 +62,22 @@ class SmsListState extends State<SmsList> {
     });
   }
 
-  void onTranslateText() {
-    print("translate before");
-    int i=0;
-    smsList.forEach((smsMessage){
-      _translateSMS(smsMessage, i, smsList.length);
-      i++;
-    });
-    
-  }
-
-  _translateSMS(smsMessage, index, noOfSms) async {
-    String textToBeTranslated = smsMessage.body;
+  void onTranslateText()  {
     GoogleTranslator _translator = new GoogleTranslator();
-    _translator.translate(textToBeTranslated).then((translatedText) {
-      print(translatedText);
-      smsMessage.body = translatedText;
-      List<SmsMessage> translatedMessages = this.translatedSmsList;
-      translatedMessages.add(smsMessage);
-      setState(() {
-        this.translatedSmsList = translatedMessages;
-      });
-      if(index == noOfSms){
-        createListView(translatedMessages);
-      }
+    List<Future> translatePromises = new List<Future>();
+    this.smsList.forEach((smsMessage) {
+      translatePromises.add(_translator.translate(smsMessage.body));
     });
+    Future.wait(translatePromises).then((translatedTexts){
+      List<SmsMessage> translatedMessages = new List<SmsMessage>();
+      int i=0;
+      translatedTexts.forEach((text) {
+        translatedMessages.add(new SmsMessage(this.smsList[i].address, text));
+        i++;
+      });
+      createListView(translatedMessages);
+    });
+
   }
 
   @override
