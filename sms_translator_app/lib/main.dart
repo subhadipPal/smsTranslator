@@ -4,7 +4,7 @@ import 'package:translator/translator.dart';
 
 void main() => runApp(MyApp());
 final ThemeData androidTheme =
-new ThemeData(primarySwatch: Colors.indigo, accentColor: Colors.white);
+    new ThemeData(primarySwatch: Colors.indigo, accentColor: Colors.white);
 
 class MyApp extends StatelessWidget {
   @override
@@ -28,10 +28,10 @@ class SmsListState extends State<SmsList> {
   SmsQuery query;
   SmsReceiver receiver = new SmsReceiver();
   List<SmsMessage> smsList = new List<SmsMessage>();
-  List<SmsMessage> translatedSmsList = new List<SmsMessage>();
-  List<SmsMessage> origSMSList = new List<SmsMessage>();
-  ListView listViewBuilder = new ListView();
-  Map<String, String> smsBodyAddressMap = new Map<String, String>();
+//  List<SmsMessage> origSMSList = new List<SmsMessage>();
+//  AnimatedList animatedList = new AnimatedList();
+  ListView smsListView;
+  List<Card> cardList = new List<Card>();
 
   @override
   void initState() {
@@ -41,49 +41,92 @@ class SmsListState extends State<SmsList> {
   }
 
   Future<void> getSms() async {
+    //Navigator.pop(context);
     try {
       query = new SmsQuery();
-      List messages = await query.getAllSms;
-      messages = messages.sublist(0,500);
-      createListView(messages, false);
+      List<SmsMessage> messages = await query.getAllSms;
+      createListView(messages);
     } catch (e) {
       print('failed: ${e.toString()}');
     }
   }
 
-  createListView(messages, trailingFlag) {
-    ListView tempListViewBuilder;
-    if (!trailingFlag) {
-      tempListViewBuilder = new ListView.builder(
-          padding: const EdgeInsets.all(10.0),
-          itemCount: messages.length,
-          itemBuilder: (context, i) => ListTile(
-              title: Text(messages[i].address),
-              subtitle: Text(messages[i].body)));
-    } else {
-      tempListViewBuilder = new ListView.builder(
-          padding: const EdgeInsets.all(10.0),
-          itemCount: messages.length,
-          itemBuilder: (context, i) {
-            return Card(
-              child: Column(
-                children: <Widget>[
-                  ListTile(
-                      title: Text(messages[i].address),
-                      subtitle: Text(this.origSMSList[i].body)),
-                  Container(
-                      color: Colors.grey[200],
-                      child: ListTile(
-                          leading: Icon(
-                            Icons.check_circle,
-                            color: Colors.green[800],
-                          ),
-                          title: Text(messages[i].body)))
-                ],
-              ),
-            );
-          });
+  void createListView(List<SmsMessage> messages) {
+    GoogleTranslator _translator = new GoogleTranslator();
+    if (messages != null && messages.length > 0) {
+      messages.forEach((smsMessage) {
+        Card tempCard = new Card(
+            child: ListTile(
+          title: Text(smsMessage.address),
+          subtitle: Text(smsMessage.body),
+          onTap: () {
+            _translator.translate(smsMessage.body).then((translatedText) {
+              infoDialog(context, new SmsMessage(smsMessage.address, translatedText));
+            });
+          },
+        ));
+        cardList.add(tempCard);
+      });
+      setState(() {
+        this.cardList = cardList;
+      });
+
+      this.smsListView = new ListView(
+        children: this.cardList,
+      );
+
+      setState(() {
+        this.smsListView = smsListView;
+      });
+
+      /*setState(() {
+        this.animatedList = tempAnimatedList;
+      });*/
     }
+  }
+  infoDialog(context, smsMessage){
+    showDialog(
+      context: context,
+      barrierDismissible: true,
+      builder: (BuildContext context) {
+        return AlertDialog(
+          title: Text(smsMessage.address),
+          content:Text(smsMessage.body),
+          actions: <Widget>[
+            FlatButton(
+              child: Text('Okay'),
+              onPressed: () =>  Navigator.of(context).pop(),
+            )
+          ],
+        );
+      }
+    );
+  }
+
+  /*createListView(messages) {
+    GoogleTranslator _translator = new GoogleTranslator();
+    ListView tempListViewBuilder = new ListView.builder(
+        padding: const EdgeInsets.all(10.0),
+        itemCount: messages.length,
+        itemBuilder: (context, i) {
+          Card tempCard = new Card(
+            child: ListTile(
+              title: Text(messages[i].address),
+              subtitle: Text(messages[i].body),
+              onTap: () {
+                _translator.translate(messages[i].body).then((translatedText){
+                  _updateSingleItem(translatedText, i, messages[i].address, messages[i].body).then((updatedListView){
+                    setState(() {
+                      this.listViewBuilder = updatedListView;
+                    });
+                  });
+                });
+              },
+            ),
+          );
+          cards.add(tempCard);
+          return tempCard;
+        });
 
     setState(() {
       listViewBuilder = tempListViewBuilder;
@@ -92,40 +135,41 @@ class SmsListState extends State<SmsList> {
       smsList = messages;
     });
   }
+  Future<ListView> _updateSingleItem(translatedText, index, address, originalSmsText) async{
+    print("_updateSingleItem");
+    Card newCard = Card(
+      child: Column(
+        children: <Widget>[
+          ListTile(
+              title: Text(address),
+              subtitle: Text(originalSmsText)),
+          Container(
+              color: Colors.grey[200],
+              child: ListTile(
+                  leading: Icon(
+                    Icons.check_circle,
+                    color: Colors.green[800],
+                  ),
+                  title: Text(translatedText)))
+        ],
+      ),
+    );
+    this.cards.removeAt(index);
+    this.cards.insert(index, newCard);
+    ListView tempListView = ListView(
+      children: this.cards,
+    );
+    return tempListView;
+  }*/
 
-  void onTranslateText() {
-    showDialog(
-        context: context,
-        builder: (BuildContext context) {
-          return Center(child: CircularProgressIndicator(
-            backgroundColor: Colors.transparent,
-            semanticsLabel: "Loading...",
-          ),);
-        });
-    GoogleTranslator _translator = new GoogleTranslator();
-    List<Future> translatePromises = new List<Future>();
-    this.smsList.forEach((smsMessage) {
-      translatePromises.add(_translator.translate(smsMessage.body));
-    });
-    Future.wait(translatePromises).then((translatedTexts) {
-      Navigator.pop(context);
-      List<SmsMessage> translatedMessages = new List<SmsMessage>();
-      int i = 0;
-      translatedTexts.forEach((text) {
-        translatedMessages.add(new SmsMessage(this.smsList[i].address, text));
-        i++;
-      });
-      setState(() {
-        this.origSMSList = this.smsList;
-      });
-      createListView(translatedMessages, true);
-    });
+  void onSyncSMS() {
+    getSms();
   }
 
   @override
   Widget build(BuildContext context) {
     return new Scaffold(
-        body: listViewBuilder,
+        body: smsListView,
         floatingActionButton: new Column(
             crossAxisAlignment: CrossAxisAlignment.end,
             mainAxisAlignment: MainAxisAlignment.end,
@@ -133,11 +177,11 @@ class SmsListState extends State<SmsList> {
               new Container(
                 margin: const EdgeInsets.only(top: 20.0),
                 child: FloatingActionButton.extended(
-                    icon: Icon(Icons.language, size: 30.0),
-                    onPressed: onTranslateText,
+                    icon: Icon(Icons.autorenew, size: 30.0),
+                    onPressed: onSyncSMS,
                     backgroundColor: Colors.indigo,
                     foregroundColor: Colors.white,
-                    label: Text("Translate")),
+                    label: Text("Sync")),
                 width: 160.0,
                 height: 60.0,
               )
